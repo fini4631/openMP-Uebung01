@@ -30,16 +30,11 @@ int main (int argc, char* argv[])
 		// "Returns the thread number of the calling thread within the current team."
 		printf("Hello from thread %d\n", threadID);
 
-		/*   */
+		/*  Wird nur von Thread mit der Nummer 0 ausgeführt (Master Thread?) #pragma omp master */
 		if (threadID == 0)
 		{
-			numThreads = omp_get_num_threads();				//
+			numThreads = omp_get_num_threads();				// Anzahl der gestarteten Threads
 			printf("Number of threads: %d\n", numThreads);
-		}
-		if (threadID == 1)
-		{
-			numThreads = omp_get_num_threads();				//
-			printf("ich bin %d Number of threads: %d\n", threadID, numThreads);
 		}
 	}
 

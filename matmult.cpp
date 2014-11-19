@@ -16,6 +16,7 @@ float **alloc_mat(int row, int col)
 	A2 = (float *)calloc(row*col, sizeof(float));    // all matrix elements
     
                                                     // es bestehen keine Abhänigkeiten der einzelnen indizes
+                                                    // Reihenfolge ist zu beachten ordered
     #pragma omp parallel for ordered
     for (int i = 0; i < row; i++)
         #pragma omp ordered
@@ -30,6 +31,7 @@ float **alloc_mat(int row, int col)
 void init_mat(float **A, int row, int col)
 {
                                                     // es bestehen keine Abhänigkeiten der einzelnen indizes
+                                                    // Reihenfolge ist zu beachten ordered
     #pragma omp parallel for ordered
     for (int i = 0; i < row*col; i++)
         #pragma omp ordered
@@ -42,8 +44,11 @@ void init_mat(float **A, int row, int col)
 void print_mat(float **A, int row, int col, char *tag)
 {
     int i, j;
-                                                    // Ausgabe lässt sich gar nicht parallelisieren, 
-                                                    // da sonst Reihenfolge der Ausgabe durcheinander
+                                                    // Ausgabe ist unsinnig zu parallelisieren, 
+                                                    // weil nur Speicherzugiff und keine Berechnung.
+                                                    // wenn nur eine Schleife parallelisierbar. nicht beide
+                                                    // gleichzeitig. #pragma omp for collapse(2) funktioniert nicht,
+                                                    // da in der ersten for loop Code (Zeilenumbruch) ausgeführt wird.
     printf("Matrix %s:\n", tag);
     for (i = 0; i < row; i++)
     {
@@ -91,13 +96,14 @@ int main(int argc, char *argv[])
                          Schleifen müssen sehr einfach gehalten sein, damit Parallelisierung erfolgen kann
                          Alle Schleifenvariablen müssen völlig unabhängig voneinander sein. 
                          Sind es aber nicht, die Ausgabe war Fehlerhaft. */
-    // #pragma omp parallel for collapse(3)
+
     double sum;
+    // #pragma omp parallel for collapse(3) schedule(dynamik)
     for (i = 0; i < d1; i++)
        for (j = 0; j < d3; j++)
           #pragma omp parallel for private(sum)// Rechenintensive Operation wird parallelisiert.
           for (k = 0; k < d2; k++)
-            {// Nur hier darf beliebiger Code stehen! wenn collaps verwendet würde
+            { // Nur hier darf beliebiger Code stehen! wenn collaps verwendet würde
              sum = A[i][k] * B[k][j];
              #pragma omp atomic
              C[i][j] += sum;
